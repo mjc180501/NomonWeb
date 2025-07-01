@@ -756,7 +756,7 @@ class Keyboard{
         this.clockgrid.undo_label.draw_text();
     }
     speak_sentence(str){
-        const sentence = str.split(".").pop().trim();
+        const sentence = str.split(/[.?!]/).pop().trim();
         if (sentence.length > 0) {
             const speech = new SpeechSynthesisUtterance(sentence);
             window.speechSynthesis.speak(speech);
@@ -876,7 +876,7 @@ class Keyboard{
                 this.typed = this.typed.concat(new_char);
             }
             else if (kconfig.break_chars.includes(new_char)) {
-                if (this.tts_checkbox.checked && new_char == '.'){
+                if (this.tts_checkbox.checked && ['.', '?', '!'].includes(new_char)){
                     this.speak_sentence(this.typed);
                 }
                 this.old_context_li.push(this.context);
