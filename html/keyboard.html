@@ -168,6 +168,27 @@ label {
           />
         <b>Sound</b>
         </label>
+        <label for="checkbox"
+          onmousedown="event.preventDefault()"
+          onclick="
+            console.log('label:click');
+            if (this === event.target) {
+              console.log('label === event.target');
+              console.log('label:click preventDefault()');
+              // prevent focus and click
+              event.preventDefault();
+              // call click on the labeled control
+              this.control && this.control.click();
+            }
+          ">
+          <input id="checkbox_tts" type="checkbox"
+            onmousedown="event.preventDefault()"
+            onclick="
+              console.log('checkbox:click', `checked = ${this.checked}`);
+            "
+          />
+        <b>TTS</b>
+        </label>
     </div>
 </div>
 <div class="container space-between" id="top_bar_bottom">

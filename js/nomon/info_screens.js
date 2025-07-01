@@ -211,7 +211,7 @@ export class InfoScreen {
         this.info_canvas.ctx.fillStyle = "#ffffff";
         this.info_canvas.ctx.strokeStyle = "#404040";
         this.info_canvas.ctx.lineWidth = font_height*0.3;
-        roundRect(this.info_canvas.ctx, rect_x, rect_y, font_height*28, font_height*4.5,
+        roundRect(this.info_canvas.ctx, rect_x, rect_y, font_height*28, font_height*5.7,
             20, true, true);
 
         var arrow_x_start = rect_x + font_height*29;
@@ -239,6 +239,8 @@ export class InfoScreen {
             rect_x + font_height, rect_y + font_height*2.5);
         this.info_canvas.ctx.fillText("Sound: A bell will sound when you press.",
             rect_x + font_height, rect_y + font_height*3.7);
+        this.info_canvas.ctx.fillText("TTS: Written sentences are spoken out loud.",
+            rect_x + font_height, rect_y + font_height*4.9);
     }
     draw_histogram_info(){
         this.info_canvas.ctx.clearRect(this.width * 3/5, this.height*0.8, this.width, this.height);

@@ -226,6 +226,13 @@ class Keyboard{
             this.audio_checkbox.checked = true;
         }
 
+        this.tts_checkbox = document.getElementById("checkbox_tts");
+        if (this.prev_data && this.prev_data.tts !== null){
+            this.tts_checkbox.checked = this.prev_data.tts;
+        }else {
+            this.tts_checkbox.checked = true;
+        }
+
 
         if (this.emoji_keyboard) {
             this.keygrid = new widgets.KeyGrid(this.keygrid_canvas, kconfig.emoji_target_layout);
@@ -748,6 +755,13 @@ class Keyboard{
         this.clockgrid.undo_label.text = undo_text;
         this.clockgrid.undo_label.draw_text();
     }
+    speak_sentence(str){
+        const sentence = str.split(".").pop().trim();
+        if (sentence.length > 0) {
+            const speech = new SpeechSynthesisUtterance(sentence);
+            window.speechSynthesis.speak(speech);
+        }
+    }
     make_choice(index){
         var is_undo = false;
         var is_equalize = false;
@@ -862,6 +876,9 @@ class Keyboard{
                 this.typed = this.typed.concat(new_char);
             }
             else if (kconfig.break_chars.includes(new_char)) {
+                if (this.tts_checkbox.checked && new_char == '.'){
+                    this.speak_sentence(this.typed);
+                }
                 this.old_context_li.push(this.context);
                 this.context = "";
                 this.last_add_li.push(1);
