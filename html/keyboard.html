@@ -6,6 +6,14 @@
       href="../icon.png">
 <head>
     <meta charset="utf-8">
+    <style>
+        @font-face {
+            font-family: 'OpenDyslexic';
+            src: url('../fonts/OpenDyslexicMono-Regular.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+    </style>
     <meta http-equiv="cache-control" content="no-cache, must-revalidate, post-check=0, pre-check=0"/>
     <meta http-equiv="cache-control" content="max-age=0"/>
     <meta http-equiv="expires" content="0"/>
@@ -103,6 +111,13 @@ label {
             <label for="speed_slider" class="label toprow"><b><span id="speed_slider_value"></span></b></label>
 <!--            <input class='btn clickable' type="button" id = "tutorial_button" value = "Retrain"/>-->
         </div>
+    </div>
+    <div>
+      <label for="font_dropdown"><b>Font:</b></label>
+          <select id="font_dropdown">
+            <option value="regular">Regular</option>
+            <option value="dyslexic">Dyslexic</option>
+          </select>
     </div>
     <div>
         <label for="checkbox"
@@ -228,6 +243,18 @@ Your browser does not support the canvas element.
 </canvas>
 
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+<script type="text/javascript">
+    const params = new URLSearchParams(window.location.search);
+    const font = params.get('font') || 'regular';
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        const fontDropdown = document.getElementById('font_dropdown');
+        if (fontDropdown) {
+            fontDropdown.value = font;
+        }
+    });
+</script>
 
 <script type="module" src="../js/nomon/keyboard.js"></script>
 

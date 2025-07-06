@@ -1,3 +1,29 @@
+
+// Global variable to track font setting
+var current_font = 'regular';
+
+/**
+ * Get the appropriate font family based on font setting.
+ * @returns {string} Font family string
+ */
+function getFontFamily() {
+    return current_font === 'dyslexic' ? "'OpenDyslexic'" : "Helvetica, sans-serif";
+}
+
+/**
+ * Set font setting.
+ * @param {string} font - Font type ('regular' or 'dyslexic')
+ */
+export function setFont(font) {
+    if (current_font !== font) {
+        current_font = font;
+        // Trigger font change across the application
+        if (window.ClockGrid && window.ClockGrid.update_word_clocks) {
+            window.ClockGrid.update_word_clocks();
+        }
+    }
+}
+
 /**
  * @param {string} canvas_id The id for the canvas element defined in the main HTML page.
  * @param {number} layer_index The zIndex order for display of the canvas element. Higher-valued canvases are displayed on top of lower-valued ones.
@@ -448,7 +474,7 @@ export class Label {
         this.face_canvas.ctx.clearRect(this.x_pos, this.y_pos+this.height, this.height*10, -this.height*2);
         this.face_canvas.ctx.fillStyle = "#000000";
         var font_height = this.height;
-        this.face_canvas.ctx.font = font_height.toString().concat("px Helvetica");
+        this.face_canvas.ctx.font = font_height.toString().concat("px " + getFontFamily());
         this.face_canvas.ctx.fillText(this.text, this.x_pos, this.y_pos + font_height / 3);
     }
 }
@@ -498,7 +524,7 @@ export class Clock{
 
             this.face_canvas.ctx.fillStyle = "#000000";
             var font_height = this.radius * 1.7;
-            this.face_canvas.ctx.font = font_height.toString().concat("px Helvetica");
+            this.face_canvas.ctx.font = font_height.toString().concat("px " + getFontFamily());
             this.face_canvas.ctx.fillText(this.text, this.x_pos + this.radius * 1.25, this.y_pos + font_height / 3);
         }
     }

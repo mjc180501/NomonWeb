@@ -1,4 +1,5 @@
 import * as widgets from './widgets.js';
+import {setFont} from './widgets.js';
 import * as infoscreen from './info_screens.js';
 import * as kconfig from './kconfig.js';
 import * as config from './config.js';
@@ -231,6 +232,15 @@ class Keyboard{
             this.tts_checkbox.checked = this.prev_data.tts;
         }else {
             this.tts_checkbox.checked = true;
+        }
+
+        this.font_dropdown = document.getElementById("font_dropdown");
+        if (this.font_dropdown) {
+            this.font_dropdown.onchange = function() {
+                var current_url = new URL(window.location);
+                current_url.searchParams.set('font', this.font_dropdown.value);
+                window.location.href = current_url.toString();
+            }.bind(this);
         }
 
 
@@ -1025,6 +1035,9 @@ class Keyboard{
 
 const params = new URLSearchParams(document.location.search);
 const emoji = params.get("emoji") === 'true';
+const font = params.get("font") || 'regular';
+
+setFont(font);
 
 let keyboard = new Keyboard(null, false, emoji, null);
 setInterval(keyboard.animate.bind(keyboard), config.ideal_wait_s*1000);
