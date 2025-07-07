@@ -298,6 +298,7 @@ export class LanguageModel{
         var key_probs = [];
         var back_prob = Math.log(kconfig.back_prob);
         var undo_prob = Math.log(kconfig.undo_prob);
+        var tts_prob = Math.log(kconfig.tts_prob);
         var rem_prob = Math.log(kconfig.rem_prob-kconfig.break_chars.length/kconfig.key_chars.length - kconfig.back_prob);
 
         for (var char_ind in kconfig.key_chars){
@@ -312,6 +313,8 @@ export class LanguageModel{
                 key_probs.push(undo_prob);
             }else if (char == kconfig.back_char || char == kconfig.clear_char){
                 key_probs.push(back_prob);
+            }else if (char == kconfig.tts_char){
+                key_probs.push(tts_prob);
             }
         }
 

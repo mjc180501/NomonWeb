@@ -3,6 +3,7 @@ export var mybad_char = '@';
 export var break_chars = ['.', ',', '?', '!'];
 export var back_char = '#';
 export var clear_char = '$';
+export var tts_char = '~';
 
 
 // TEXT KEYBOARD PARAMETERS
@@ -11,7 +12,7 @@ export var clear_char = '$';
  * @type {Array<string>}
  */
 export var key_chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                   'u', 'v', 'w', 'x', 'y', 'z', '.', ',', '!', '?', '\'', '#', '$', '@', '_'];
+                   'u', 'v', 'w', 'x', 'y', 'z', '.', ',', '!', '?', '\'', '#', '$', '@', '_', '~'];
 /**
  * A list of all characters that can draw word predictions from the language model
  * @type {Array<string>}
@@ -102,7 +103,12 @@ export var undo_prob = 1.0 / 40;
  */
 export var back_prob = 1.0 / 40;
 /**
+ * Prior probability for the TTS option.
+ * @type {number}
+ */
+export var tts_prob = 1.0 / 40;
+/**
  * remaining, non-special probability used to weight the priors from the language model.
  * @type {number}
  */
-export var rem_prob = 1.0 - undo_prob - back_prob*2;
+export var rem_prob = 1.0 - undo_prob - back_prob*2 - tts_prob;

@@ -653,6 +653,8 @@ class Keyboard{
             if (last_add > 0) {
                 new_text = this.typed.slice(this.typed.length -last_add, this.typed.length);
                 undo_text = new_text;
+            } else if (last_add == 0) {
+                new_text = undo_text = '';
             } else if (last_add == -1) {
                 new_text = '';
                 is_delete = true;
@@ -765,12 +767,20 @@ class Keyboard{
         this.clockgrid.undo_label.text = undo_text;
         this.clockgrid.undo_label.draw_text();
     }
-    speak_sentence(str){
-        const sentence = str.split(/[.?!]/).pop().trim();
+    speak_sentence(sentence){
         if (sentence.length > 0) {
-            const speech = new SpeechSynthesisUtterance(sentence);
+            let speakText = this.formatText(sentence);
+            
+            const speech = new SpeechSynthesisUtterance(speakText);
+            speech.lang = 'en-US';
             window.speechSynthesis.speak(speech);
         }
+    }
+    formatText(text) {
+        return text
+            .replace("_", " ")
+            .replace(/ ([.!?])/g, "$1 ")
+            .trim();
     }
     make_choice(index){
         var is_undo = false;
@@ -797,6 +807,7 @@ class Keyboard{
             new_char = new_char.replace("Undo", kconfig.mybad_char);
             new_char = new_char.replace("Backspace", kconfig.back_char);
             new_char = new_char.replace("Clear", kconfig.clear_char);
+            new_char = new_char.replace("TTS", kconfig.tts_char);
             selection = new_char;
 
 
@@ -872,6 +883,11 @@ class Keyboard{
 
                 this.clear_text = true;
             }
+            else if (new_char == kconfig.tts_char) {
+                this.speak_sentence(this.typed);
+                new_char = '';
+                this.last_add_li.push(0);
+            }
             else if (kconfig.emoji_main_chars.includes(new_char)){
                 console.log("EMOJI");
                 this.old_context_li.push(this.context);
@@ -887,7 +903,8 @@ class Keyboard{
             }
             else if (kconfig.break_chars.includes(new_char)) {
                 if (this.tts_checkbox.checked && ['.', '?', '!'].includes(new_char)){
-                    this.speak_sentence(this.typed);
+                    const sentence = this.typed.split(/[.?!]/).pop().trim();
+                    this.speak_sentence(sentence);
                 }
                 this.old_context_li.push(this.context);
                 this.context = "";
@@ -929,6 +946,8 @@ class Keyboard{
         else{
             this.left_context = this.typed;
         }
+
+        navigator.clipboard.writeText(this.formatText(this.typed));
 
         // this.draw_words();
         this.update_context();

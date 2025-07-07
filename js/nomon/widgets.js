@@ -360,6 +360,16 @@ export class ClockGrid{
                 }
             this.clocks.push(cur_space_clock);
 
+            var tts_clock_x = x_start + this.clock_radius * 12;
+            var tts_clock_y = y_start + (y_end - y_start) / 4 * 3;
+
+            let cur_tts_clock = new Clock(this.face_canvas, this.hand_canvas,
+                                    tts_clock_x, tts_clock_y, this.clock_radius, "TTS");
+            for (var i=0; i<this.parent.n_pred; i++) {
+                    this.clocks.push(null);
+                }
+            this.clocks.push(cur_tts_clock);
+
             var undo_label_x = x_start + this.clock_radius * 8;
             var undo_label_y = y_start + (y_end - y_start) / 4;
 
