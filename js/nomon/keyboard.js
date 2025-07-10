@@ -642,9 +642,6 @@ class Keyboard{
         if (this.in_session) {
             previous_text = previous_text.slice(this.study_manager.cur_phrase.length + 1, previous_text.length);
         }
-        if (previous_text.length > 0 && previous_text.charAt(previous_text.length - 1) == "_") {
-            previous_text = previous_text.slice(0, previous_text.length - 1).concat(" ");
-        }
 
         var last_add;
         var undo_text;
@@ -664,11 +661,6 @@ class Keyboard{
             new_text = '';
             undo_text = new_text;
         }
-
-        previous_text = previous_text.replace(" .", ". ");
-        previous_text = previous_text.replace(" ,", ", ");
-        previous_text = previous_text.replace(" ?", "? ");
-        previous_text = previous_text.replace(" !", "! ");
 
         var index = this.previous_winner;
         if ( [kconfig.mybad_char, 'Undo'].includes(this.clockgrid.clocks[index].text)){
@@ -701,9 +693,6 @@ class Keyboard{
                     this.typed_versions.push(previous_text.slice(0, previous_text.length - 1));
                 }
                 new_text = this.typed_versions[this.typed_versions.length - 1];
-                if (new_text.length > 0 && new_text.charAt(new_text.length - 1) == " "){
-                    new_text = new_text.slice(0, new_text.length-1).concat("_");
-                }
 
                 input_text = new_text;
                 if (this.in_session) {
@@ -737,16 +726,10 @@ class Keyboard{
             }
         }
         else{
-            this.typed_versions.push(previous_text.concat(new_text));
-            if (new_text.length > 0 && new_text.charAt(new_text.length - 1) == " "){
-                    new_text = new_text.slice(0, new_text.length - 1);
-            }
+            this.typed_versions.push(this.typed);
             input_text = previous_text.concat(new_text);
 
-            input_text = input_text.replace(" .", "._");
-            input_text = input_text.replace(" ,", ",_");
-            input_text = input_text.replace(" ?", "?_");
-            input_text = input_text.replace(" !", "!_");
+            // input_text = input_text.replace(/ ([.!?])/g, "$1 ");
 
             if (this.in_session) {
                 input_text = this.study_manager.cur_phrase.concat('\n', input_text);
@@ -778,8 +761,8 @@ class Keyboard{
     }
     formatText(text) {
         return text
-            .replace("_", " ")
-            .replace(/ ([.!?])/g, "$1 ")
+            // .replace("_", " ")
+            // .replace(/ ([.!?])/g, "$1 ")
             .trim();
     }
     make_choice(index){
@@ -812,8 +795,8 @@ class Keyboard{
 
 
             // # special characters
-            if (new_char == kconfig.space_char || new_char == ' '){
-                new_char = '_'
+            if (new_char == kconfig.space_char || new_char == '_') {
+                new_char = ' ';
                 this.old_context_li.push(this.context);
                 this.typed = this.typed.concat(new_char);
                 this.context = "";
@@ -874,7 +857,7 @@ class Keyboard{
                 new_char = '';
             }
             else if (new_char == kconfig.clear_char) {
-                new_char = '_';
+                new_char = ' ';
                 this.old_context_li.push(this.context);
                 this.context = "";
                 this.ctyped.push(this.typed);
@@ -909,7 +892,7 @@ class Keyboard{
                 this.old_context_li.push(this.context);
                 this.context = "";
                 this.last_add_li.push(1);
-                this.typed = this.typed.concat(new_char);
+                this.typed = this.typed.concat(new_char).replace(/ ([.!?])/g, "$1 ");
                 // if " " + new_char in self.typed:
                 //     self.last_add_li.concat(2);
                 //     self.typed = self.typed.replace(" " + new_char, new_char + " ");
@@ -924,8 +907,8 @@ class Keyboard{
             var key = this.index_to_wk[index];
             var pred = this.index_to_wk[index] % kconfig.n_pred;
             new_word = this.clockgrid.clocks[index].text;
-            if (!this.emoji_keyboard && new_word.charAt(new_word.length - 1) !== "_"){
-                new_word = new_word.concat("_");
+            if (!this.emoji_keyboard && new_word.charAt(new_word.length - 1) !== " "){
+                new_word = new_word.concat(" ");
             }
             selection = new_word;
             var context_length = this.lm_prefix.length;
@@ -951,6 +934,8 @@ class Keyboard{
 
         // this.draw_words();
         this.update_context();
+
+        console.log("Typed:", this.typed);
 
         this.draw_typed();
 
@@ -982,7 +967,7 @@ class Keyboard{
      * Splits the currently typed text into left context and prefix for the language model. The prefix is the current word being typed, the left context is all the words before the current word.
      */
     update_context(){
-        var space_index = Math.max(this.typed.lastIndexOf(" "), this.typed.lastIndexOf("_"));
+        var space_index = this.typed.lastIndexOf(" ");
         var break_index = -1;
         for (var break_char_index in kconfig.break_chars){
             var break_char = kconfig.break_chars[break_char_index];
@@ -991,7 +976,6 @@ class Keyboard{
         var context_index = Math.max(break_index, space_index);
         this.left_context = this.typed.slice(0, context_index+1);
         this.lm_prefix = this.typed.slice(context_index+1, this.typed.length);
-        this.left_context = this.left_context.replace("_", " ");
     }
 
     /**

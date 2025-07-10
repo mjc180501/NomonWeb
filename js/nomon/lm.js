@@ -229,7 +229,7 @@ export class LanguageModel{
         else if (cache_type == 'word_future_word'){
             future_words = output.futures;
             for (future_index in future_words) {
-                future_word = future_words[future_index].next.concat("_");
+                future_word = future_words[future_index].next.concat(" ");
                 words_li = future_words[future_index].predictions.results;
                 formatted_words = this.foramt_words(words_li, "");
                 if (future_word in this.word_cache) {
@@ -259,7 +259,7 @@ export class LanguageModel{
         else if (cache_type == 'char_future_word'){
             future_words = output.futures;
             for (future_index in future_words) {
-                future_word = future_words[future_index].next.concat("_");
+                future_word = future_words[future_index].next.concat(" ");
                 chars_li = future_words[future_index].predictions.results;
                 formatted_chars = this.format_chars(chars_li);
                 if (future_char in this.word_cache) {
@@ -351,7 +351,7 @@ export class LanguageModel{
                 if (word.charAt(temp_prefix.length) == char && char_words.length < kconfig.n_pred &&
                     num_admitted_words < kconfig.num_words && log_prob > Math.log(kconfig.prob_thres)) {
                     if (word.length == 1){
-                        word = word.concat("_");
+                        word = word.concat(" ");
                     }
                     char_words.push(word);
                     char_word_probs.push(log_prob);

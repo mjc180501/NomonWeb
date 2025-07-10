@@ -717,7 +717,7 @@ class Keyboard{
 
             // # special characters
             if (new_char == kconfig.space_char || new_char == ' '){
-                new_char = '_'
+                new_char = ' '
                 this.old_context_li.push(this.context);
                 this.typed = this.typed.concat(new_char);
                 this.context = "";
@@ -778,7 +778,7 @@ class Keyboard{
                 new_char = '';
             }
             else if (new_char == kconfig.clear_char) {
-                new_char = '_';
+                new_char = ' ';
                 this.old_context_li.push(this.context);
                 this.context = "";
                 this.ctyped.push(this.typed);

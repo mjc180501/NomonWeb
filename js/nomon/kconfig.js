@@ -1,4 +1,4 @@
-export var space_char = '_';
+export var space_char = ' ';
 export var mybad_char = '@';
 export var break_chars = ['.', ',', '?', '!'];
 export var back_char = '#';
@@ -12,7 +12,7 @@ export var tts_char = '~';
  * @type {Array<string>}
  */
 export var key_chars = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                   'u', 'v', 'w', 'x', 'y', 'z', '.', ',', '!', '?', '\'', '#', '$', '@', '_', '~'];
+                   'u', 'v', 'w', 'x', 'y', 'z', '.', ',', '!', '?', '\'', '#', '$', '@', ' ', '~'];
 /**
  * A list of all characters that can draw word predictions from the language model
  * @type {Array<string>}

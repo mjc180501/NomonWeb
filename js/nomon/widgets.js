@@ -354,7 +354,7 @@ export class ClockGrid{
             var space_clock_y = y_start + (y_end - y_start) / 4*3;
 
             let cur_space_clock = new Clock(this.face_canvas, this.hand_canvas,
-                                    space_clock_x, space_clock_y, this.clock_radius, "_");
+                                    space_clock_x, space_clock_y, this.clock_radius, " ");
             for (var i=0; i<this.parent.n_pred; i++) {
                     this.clocks.push(null);
                 }
@@ -535,7 +535,7 @@ export class Clock{
             this.face_canvas.ctx.fillStyle = "#000000";
             var font_height = this.radius * 1.7;
             this.face_canvas.ctx.font = font_height.toString().concat("px " + getFontFamily());
-            this.face_canvas.ctx.fillText(this.text, this.x_pos + this.radius * 1.25, this.y_pos + font_height / 3);
+            this.face_canvas.ctx.fillText(this.text.replace(/ /g, "_"), this.x_pos + this.radius * 1.25, this.y_pos + font_height / 3);
         }
     }
 
@@ -724,6 +724,7 @@ export class Textbox{
      * @param {string} text - The text that the user has currently written.
      */
     draw_text(text){
+        console.log("Drawing text: ", text);
         this.text = text;
         this.box.value = text;
     }

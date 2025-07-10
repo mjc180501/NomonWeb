@@ -1,11 +1,11 @@
-export var space_char = '_';
+export var space_char = ' ';
 export var mybad_char = '@';
 export var break_chars = ['.', ',', '?', '!'];
 export var back_char = '#';
 export var clear_char = '$';
 
 export var key_chars = ['@', 'e', 't', 'a', 'o', 'i', 'n', 's', 'r', 'h', 'd', 'l', 'u', 'c', 'm', 'f', 'y', 'w', 'g',
-    'p', 'b', 'v', 'k', 'x', 'q', 'j', 'z', '#', '.', ',', '!', '?', '\'', '_', '$'];
+    'p', 'b', 'v', 'k', 'x', 'q', 'j', 'z', '#', '.', ',', '!', '?', '\'', ' ', '$'];
 export var main_chars = ['e', 't', 'a', 'o', 'i', 'n', 's', 'r', 'h', 'd', 'l', 'u', 'c', 'm', 'f', 'y', 'w', 'g',
     'p', 'b', 'v', 'k', 'x', 'q', 'j', 'z'];
 

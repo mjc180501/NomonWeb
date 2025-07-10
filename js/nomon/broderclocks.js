@@ -49,7 +49,7 @@ export class BroderClocks {
         var last_gap_time = (time_in - this.last_press_time) % this.time_rotate;
 
         if (this.clock_inf.is_winner() && !this.parent.in_tutorial) {
-            console.log(this.parent.clockgrid.clocks[top_score_clock].text);
+            console.log("\"" + this.parent.clockgrid.clocks[top_score_clock].text + "\"");
 
             this.clock_inf.win_history[0] = this.clock_inf.sorted_inds[0];
 
