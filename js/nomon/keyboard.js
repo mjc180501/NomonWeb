@@ -92,7 +92,7 @@ class Keyboard{
      */
     continue_init(){
         this.draw_words();
-        this.typed_versions = [''];
+        this.typed_versions = [];
 
         console.log(this.words_on);
 
@@ -630,121 +630,29 @@ class Keyboard{
      *
      */
     draw_typed(){
-        var new_text = '';
-        var redraw_words = false;
-
-        var is_delete = false;
-        var is_undo = false;
-
-        var previous_text = this.textbox.text;
-        previous_text = previous_text.replace("|", "");
-
         if (this.in_session) {
             previous_text = previous_text.slice(this.study_manager.cur_phrase.length + 1, previous_text.length);
         }
 
-        var last_add;
         var undo_text;
-        if (this.last_add_li.length > 1) {
-            last_add = this.last_add_li[this.last_add_li.length - 1];
-            if (last_add > 0) {
-                new_text = this.typed.slice(this.typed.length -last_add, this.typed.length);
-                undo_text = new_text;
-            } else if (last_add == 0) {
-                new_text = undo_text = '';
-            } else if (last_add == -1) {
-                new_text = '';
-                is_delete = true;
-                undo_text = kconfig.back_char;
+        if (this.typed_versions.length > 1) {
+            const last_typed = this.typed_versions[this.typed_versions.length - 1];
+            if (this.typed.length == 0) {
+                undo_text = "Clear";
+            }
+            else if (last_typed.length > this.typed.length) {
+                undo_text = "Delete";
+            }
+            else if ([". ", ", ", "! ", "? "].includes(this.typed.slice(this.typed.length - 2, this.typed.length))) {
+                undo_text = this.typed.charAt(this.typed.length - 2);
+            } else {
+                undo_text = this.typed.slice(last_typed.length, this.typed.length);
             }
         } else {
-            new_text = '';
-            undo_text = new_text;
+            undo_text = this.typed;
         }
 
-        var index = this.previous_winner;
-        if ( [kconfig.mybad_char, 'Undo'].includes(this.clockgrid.clocks[index].text)){
-            is_undo = true;
-            is_delete = false;
-        }
-        if (this.typed_versions[this.typed_versions.length - 1] == '' && this.typed_versions.length > 1) {
-            undo_text = 'Clear';
-        }
-
-        var input_text;
-        if (this.clear_text) {
-            this.typed_versions.push('');
-            input_text = "";
-            this.lm_prefix = "";
-            if (this.in_session) {
-                this.textbox.draw_text(this.study_manager.cur_phrase.concat('\n'));
-            } else {
-                this.textbox.draw_text("");
-            }
-            this.clear_text = false;
-            undo_text = 'Clear';
-        }
-        else if (is_delete){
-            if (this.typed_versions[this.typed_versions.length -1 ] != ''){
-                if (this.emoji_keyboard){
-                    var emoji_length = 2;
-                    this.typed_versions.push(previous_text.slice(0, previous_text.length - emoji_length));
-                } else {
-                    this.typed_versions.push(previous_text.slice(0, previous_text.length - 1));
-                }
-                new_text = this.typed_versions[this.typed_versions.length - 1];
-
-                input_text = new_text;
-                if (this.in_session) {
-                    new_text = this.study_manager.cur_phrase.concat('\n', new_text);
-                }
-                this.textbox.draw_text(new_text);
-            }
-            else {
-                input_text = "";
-                if (this.in_session) {
-                    input_text = this.study_manager.cur_phrase.concat('\n', input_text);
-                }
-            }
-        }
-        else if (is_undo){
-            if (this.typed_versions.length > 1){
-                this.typed_versions.pop();
-
-                new_text = this.typed_versions[this.typed_versions.length -1];
-                if (new_text.length > 0 && new_text.charAt(new_text.length - 1) == " "){
-                    new_text = new_text.slice(0, new_text.length - 1);
-                }
-                input_text = new_text;
-                if (this.in_session) {
-                    new_text = this.study_manager.cur_phrase.concat('\n', new_text);
-                }
-                this.textbox.draw_text(new_text);
-            }
-            else {
-                input_text = "";
-            }
-        }
-        else{
-            this.typed_versions.push(this.typed);
-            input_text = previous_text.concat(new_text);
-
-            // input_text = input_text.replace(/ ([.!?])/g, "$1 ");
-
-            if (this.in_session) {
-                input_text = this.study_manager.cur_phrase.concat('\n', input_text);
-            }
-            this.textbox.draw_text(input_text);
-        }
-        if (undo_text == kconfig.mybad_char){
-            undo_text = "Undo";
-        }
-        else if (undo_text == kconfig.back_char) {
-            undo_text = "Backspace";
-        }
-        else if (undo_text == kconfig.clear_char) {
-            undo_text = "Clear";
-        }
+        this.textbox.draw_text(this.typed);
 
         this.previous_undo_text = undo_text;
         this.clockgrid.undo_label.text = undo_text;
@@ -752,18 +660,17 @@ class Keyboard{
     }
     speak_sentence(sentence){
         if (sentence.length > 0) {
-            let speakText = this.formatText(sentence);
+            let speakText = sentence.trim();
             
             const speech = new SpeechSynthesisUtterance(speakText);
             speech.lang = 'en-US';
             window.speechSynthesis.speak(speech);
         }
     }
-    formatText(text) {
-        return text
-            // .replace("_", " ")
-            // .replace(/ ([.!?])/g, "$1 ")
-            .trim();
+    update_text(new_text){
+        this.typed_versions.push(this.typed);
+        this.typed = new_text;
+        this.draw_typed();
     }
     make_choice(index){
         var is_undo = false;
@@ -803,23 +710,10 @@ class Keyboard{
                 this.last_add_li.push(1);
             }
             else if (new_char == kconfig.mybad_char || new_char == kconfig.yourbad_char){
-                // # if added characters that turn
-                if (this.last_add_li.length > 1){
-                    var last_add = this.last_add_li.pop();
-                    this.context = this.old_context_li.pop();
-                    if (last_add > 0){
-                        this.typed = this.typed.slice(0, this.typed.length - last_add);
-                    }
-                    else if (last_add == -1){
-                        var letter = this.btyped.charAt(this.btyped.length - 1);
 
-                        this.btyped = this.btyped.slice(0, this.btyped.length-1);
-                        this.typed = this.typed.concat(letter);
-                    }
-                    else if (last_add == -2){
-                        var prev_typed = this.ctyped.pop();
-                        this.typed = prev_typed;
-                    }
+                if (this.typed_versions.length > 0){
+                    this.typed = this.typed_versions.pop();
+                    this.draw_typed();
                 }
                 if (new_char == kconfig.yourbad_char) {
                     is_equalize = true;
@@ -836,7 +730,7 @@ class Keyboard{
                 if (lt > 0){
                     this.btyped = this.btyped.concat(this.typed.charAt(this.typed.length-1));
                     this.last_add_li.push(-1);
-                    this.typed = this.typed.slice(0, this.typed.length-1);
+                    this.update_text(this.typed.slice(0, this.typed.length-1));
                     lt -= 1;
                     if (lt == 0) {
                         this.context = "";
@@ -861,8 +755,9 @@ class Keyboard{
                 this.old_context_li.push(this.context);
                 this.context = "";
                 this.ctyped.push(this.typed);
-                this.typed = ""
                 this.last_add_li.push(-2);
+
+                this.update_text('');
 
                 this.clear_text = true;
             }
@@ -876,13 +771,13 @@ class Keyboard{
                 this.old_context_li.push(this.context);
                 this.context.concat(new_char);
                 this.last_add_li.push(new_char.length);
-                this.typed = this.typed.concat(new_char);
+                this.update_text(this.typed.concat(new_char));
             }
             else if (kconfig.main_chars.includes(new_char)) {
                 this.old_context_li.push(this.context);
                 this.context.concat(new_char);
                 this.last_add_li.push(1);
-                this.typed = this.typed.concat(new_char);
+                this.update_text(this.typed.concat(new_char));
             }
             else if (kconfig.break_chars.includes(new_char)) {
                 if (this.tts_checkbox.checked && ['.', '?', '!'].includes(new_char)){
@@ -892,14 +787,14 @@ class Keyboard{
                 this.old_context_li.push(this.context);
                 this.context = "";
                 this.last_add_li.push(1);
-                this.typed = this.typed.concat(new_char).replace(/ ([.!?])/g, "$1 ");
+                this.update_text(this.typed.concat(new_char).replace(/ ([.!?,])/g, "$1 "));
                 // if " " + new_char in self.typed:
                 //     self.last_add_li.concat(2);
                 //     self.typed = self.typed.replace(" " + new_char, new_char + " ");
             }
             else{
                 this.old_context_li.push(this.context);
-                this.typed = this.typed.concat(new_char);
+                this.update_text(this.typed.concat(new_char));
                 this.last_add_li.push(1);
             }
         }
@@ -916,7 +811,7 @@ class Keyboard{
             // if (context_length > 0){
             //     this.typed = this.typed.slice(context_length, this.typed.length);
             // }
-            this.typed = this.left_context.concat(new_word);
+            this.update_text(this.left_context.concat(new_word));
             // this.typed = this.typed.concat(new_word);
             this.last_add_li.push(new_word.length - this.lm_prefix.length);
             this.old_context_li.push(this.context);
@@ -930,14 +825,10 @@ class Keyboard{
             this.left_context = this.typed;
         }
 
-        navigator.clipboard.writeText(this.formatText(this.typed));
+        navigator.clipboard.writeText(this.typed.trim());
 
         // this.draw_words();
         this.update_context();
-
-        console.log("Typed:", this.typed);
-
-        this.draw_typed();
 
         if (this.pause_checkbox.checked) {
             this.start_pause();

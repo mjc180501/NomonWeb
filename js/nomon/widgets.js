@@ -724,7 +724,6 @@ export class Textbox{
      * @param {string} text - The text that the user has currently written.
      */
     draw_text(text){
-        console.log("Drawing text: ", text);
         this.text = text;
         this.box.value = text;
     }
