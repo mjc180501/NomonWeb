@@ -630,10 +630,6 @@ class Keyboard{
      *
      */
     draw_typed(){
-        if (this.in_session) {
-            previous_text = previous_text.slice(this.study_manager.cur_phrase.length + 1, previous_text.length);
-        }
-
         var undo_text;
         if (this.typed_versions.length > 1) {
             const last_typed = this.typed_versions[this.typed_versions.length - 1];
@@ -670,6 +666,7 @@ class Keyboard{
     update_text(new_text){
         this.typed_versions.push(this.typed);
         this.typed = new_text;
+        console.log("Typed: ", this.typed);
         this.draw_typed();
     }
     make_choice(index){
@@ -705,7 +702,7 @@ class Keyboard{
             if (new_char == kconfig.space_char || new_char == '_') {
                 new_char = ' ';
                 this.old_context_li.push(this.context);
-                this.typed = this.typed.concat(new_char);
+                this.update_text(this.typed.concat(new_char));
                 this.context = "";
                 this.last_add_li.push(1);
             }
