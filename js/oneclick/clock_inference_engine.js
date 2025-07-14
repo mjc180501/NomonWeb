@@ -1,5 +1,6 @@
 import * as clock_util from './clock_util.js';
 import * as config from './config.js';
+import * as kconfig from './kconfig.js';
 
 /**
  * @private
@@ -27,11 +28,11 @@ export class Entropy {
     constructor(clock_inf) {
         this.clock_inf = clock_inf;
         this.num_bits = 0;
-        this.bits_per_select = Math.log(this.clock_inf.clocks_on.length) / Math.log(2);
+        this.bits_per_select = Math.log(this.clock_inf.clocks_li.length) / Math.log(2);
     }
 
     update_bits() {
-        var K = this.clock_inf.clocks_on.length;
+        var K = this.clock_inf.clocks_li.length;
         this.bits_per_select = Math.log(K) / Math.log(2);
         this.num_bits += this.bits_per_select;
         return this.num_bits;
@@ -203,7 +204,6 @@ export class ClockInference {
             this.clocks_li.push(i);
         }
 
-        this.clocks_on = this.parent.words_on;
         this.cscores = [];
         for (i in this.parent.clock_centers) {
             this.cscores.push(0);
@@ -212,10 +212,11 @@ export class ClockInference {
 
         this.clock_history = [[]];
 
-        this.sorted_inds = this.clocks_on.slice();
-        this.win_diffs = this.parent.win_diffs;
+        this.sorted_inds = this.clocks_li.slice();
 
         this.time_rotate = this.parent.time_rotate;
+
+        this.wbuilder = new WordBuilder(parent);
 
         this.entropy = new Entropy(this);
 
@@ -239,6 +240,13 @@ export class ClockInference {
             return Math.log(this.kde.dens_li[index] / this.kde.Z);
         }
         return 1;
+    }
+
+    get_best_word() {
+        console.log("observations: ", this.wbuilder.observations);
+        var word = this.wbuilder.calculate_word();
+        this.wbuilder.reset();
+        return word;
     }
 
     /**
@@ -283,20 +291,23 @@ export class ClockInference {
      * Update the posterior estimates for the clocks (cscores) every time yin come in.
      * @param {number} time_diff_in - The relative click time in seconds.
      */
-    update_scores(time_diff_in) {
+    add_click(time_diff_in) {
         var clock_locs = [];
+        var likelihoods = [];
         for (var i in this.cscores) {
             clock_locs.push(0);
+            likelihoods.push(0);
         }
-        for (var index in this.clocks_on) {
-            var clock = this.clocks_on[index];
+        for (var index in this.clocks_li) {
+            var clock = this.clocks_li[index];
             var time_in = this.clock_util.cur_hours[clock] * this.time_rotate /
                 this.clock_util.num_divs_time + time_diff_in - this.time_rotate * config.frac_period;
 
-            this.cscores[clock] += this.get_score_inc(time_in);
+            likelihoods[clock] = this.get_score_inc(time_in);
             clock_locs[clock] = time_in;
         }
         this.clock_locs.push(clock_locs);
+        this.wbuilder.add_click(likelihoods);
         this.update_sorted_inds();
     }
 
@@ -329,7 +340,7 @@ export class ClockInference {
 
         var clocks_on_cursor = 0;
         for (var i in this.clocks_li) {
-            if (i == this.clocks_on[clocks_on_cursor]) {
+            if (i == this.clocks_li[clocks_on_cursor]) {
                 var click_time = this.clock_util.cur_hours[i] * this.time_rotate / this.clock_util.num_divs_time +
                     time_diff_in - this.time_rotate * config.frac_period;
 
@@ -359,8 +370,8 @@ export class ClockInference {
     update_sorted_inds() {
         this.sorted_inds = [];
         var index;
-        for (index in this.clocks_on) {
-            var clock_index = this.clocks_on[index];
+        for (index in this.clocks_li) {
+            var clock_index = this.clocks_li[index];
             this.sorted_inds.push([this.compare_score(clock_index), clock_index]);
         }
 
@@ -381,14 +392,6 @@ export class ClockInference {
      * @returns {boolean} - Whether the top-score clock should be selected.
      */
     is_winner() {
-        var loc_win_diff = this.win_diffs[this.sorted_inds[0]];
-
-
-        if (this.clocks_on.length <= 1) {
-            return true;
-        } else if (this.cscores[this.sorted_inds[0]] - this.cscores[this.sorted_inds[1]] > loc_win_diff) {
-            return true;
-        }
         return false;
     }
 
@@ -449,4 +452,113 @@ export class ClockInference {
         }
     }
 
+}
+
+export class WordBuilder {
+    constructor(parent) {
+        this.parent = parent;
+        this.observations = [];
+        this.transition_matrix = parent.lm.transition_matrix;
+        console.log("Transition matrix initialized:", this.transition_matrix);
+    }
+
+    init_transition_matrix() {
+        for (var i in this.transition_matrix) {
+            for (var j in this.transition_matrix[i]) {
+                this.transition_matrix[i][j] = 0;
+            }
+        }
+    }
+
+    add_click(likelihoods) {
+        this.observations.push(likelihoods);
+        console.log("Added click with likelihoods:", likelihoods);
+    }
+
+    calculate_word() {
+        if (this.observations.length === 0) {
+            return "";
+        }
+
+        const numObservations = this.observations.length;
+        const numStates = kconfig.key_chars.length;
+        
+        // Initialize Viterbi tables
+        const viterbi = new Array(numObservations);
+        const path = new Array(numObservations);
+        
+        for (let t = 0; t < numObservations; t++) {
+            viterbi[t] = new Array(numStates);
+            path[t] = new Array(numStates);
+        }
+        
+        // Initialize first observation
+        for (let s = 0; s < numStates; s++) {
+            // Use uniform prior for first character (or could use character frequencies)
+            const uniformPrior = Math.log(1.0 / numStates);
+            viterbi[0][s] = uniformPrior + this.observations[0][s];
+            path[0][s] = -1; // No previous state
+        }
+        
+        // Forward pass - fill the Viterbi table
+        for (let t = 1; t < numObservations; t++) {
+            for (let s = 0; s < numStates; s++) {
+                let maxProb = -Infinity;
+                let maxPrevState = -1;
+                
+                // Find the best previous state
+                for (let prevS = 0; prevS < numStates; prevS++) {
+                    // Get transition probability from transition matrix
+                    const transitionProb = this.transition_matrix[prevS] && this.transition_matrix[prevS][s] 
+                        ? this.transition_matrix[prevS][s] 
+                        : Math.log(0.001); // Small probability for missing transitions
+                    
+                    const prob = viterbi[t-1][prevS] + transitionProb + this.observations[t][s];
+                    
+                    if (prob > maxProb) {
+                        maxProb = prob;
+                        maxPrevState = prevS;
+                    }
+                }
+                
+                viterbi[t][s] = maxProb;
+                path[t][s] = maxPrevState;
+            }
+        }
+        
+        // Backward pass - find the best path
+        const bestPath = new Array(numObservations);
+        
+        // Find the best final state
+        let maxFinalProb = -Infinity;
+        let bestFinalState = -1;
+        
+        for (let s = 0; s < numStates; s++) {
+            if (viterbi[numObservations - 1][s] > maxFinalProb) {
+                maxFinalProb = viterbi[numObservations - 1][s];
+                bestFinalState = s;
+            }
+        }
+        
+        // Backtrack to find the best path
+        bestPath[numObservations - 1] = bestFinalState;
+        for (let t = numObservations - 2; t >= 0; t--) {
+            bestPath[t] = path[t + 1][bestPath[t + 1]];
+        }
+        
+        // Convert state indices to characters
+        let word = "";
+        for (let t = 0; t < numObservations; t++) {
+            const charIndex = bestPath[t];
+            if (charIndex >= 0 && charIndex < kconfig.key_chars.length) {
+                word += kconfig.key_chars[charIndex];
+            }
+        }
+        
+        return word;
+    }
+
+    reset() {
+        this.observations = [];
+    }
 }

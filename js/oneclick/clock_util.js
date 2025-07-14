@@ -115,7 +115,7 @@ export class ClockUtil{
 
         this.spaced = new SpacedArray(this.num_divs_time);
 
-        this.init_round(this.clock_inf.clocks_on);
+        this.init_round(this.clock_inf.clocks_li);
     }
     init_round(clock_index_list){
         this.update_curhours(clock_index_list);
@@ -124,19 +124,19 @@ export class ClockUtil{
      * Updates the cur hours by 1, and update both the screen and the parameters of the clocks.
      * @param {Array<number>} clock_index_list - Array containing the indices of all active clocks to increment.
      */
-    increment(clock_index_list){
+    increment(){
         this.bc.latest_time = Date.now()/1000;
         var clock;
         var clock_ind;
-        for (clock_ind in clock_index_list){
-            clock = clock_index_list[clock_ind];
+        for (clock_ind in this.clock_inf.clocks_li){
+            clock = this.clock_inf.clocks_li[clock_ind];
             this.cur_hours[clock] = (this.cur_hours[clock] + 1) % this.num_divs_time;
             this.clock_angles[clock] = this.hl.hour_locs[this.cur_hours[clock]];
         }
 
         var clocks = this.bc.parent.clockgrid.clocks;
-        for (clock_ind in clock_index_list){
-            var clock_index = clock_index_list[clock_ind];
+        for (clock_ind in this.clock_inf.clocks_li){
+            var clock_index = this.clock_inf.clocks_li[clock_ind];
             clock = clocks[clock_index];
             var angle = this.hl.hour_locs[this.cur_hours[clock_index]];
             clock.angle = angle[0];

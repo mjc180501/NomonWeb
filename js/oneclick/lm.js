@@ -1,6 +1,5 @@
 import {makeCorsRequest} from "../cors_request.js";
 import * as kconfig from './kconfig.js';
-import {prob_thres} from "./kconfig.js";
 
 
 /**
@@ -61,7 +60,10 @@ export class LanguageModel{
         this.word_update_complete = false;
         this.char_update_complete = false;
 
-        this.update_cache("", "");
+        this.transition_matrix = [];
+        this.transition_matrix_complete = false;
+
+        this.get_transition_matrix();
 
     }
 
@@ -79,6 +81,25 @@ export class LanguageModel{
         }
         url = url.concat("num=25");
         return url;
+    }
+
+    get_transition_matrix() {
+        this.transition_matrix_complete = false;
+        this.transition_matrix = [];
+        for (var index in kconfig.key_chars) {
+            var api_url = this.construct_url(this.char_predict_base_url, {"left": kconfig.key_chars[index]});
+            makeCorsRequest(api_url, this.recieve_transition_matrix.bind(this), index);
+        }
+    }
+
+    recieve_transition_matrix(output, index) {
+        var chars_li = output.results;
+        var formatted_chars = this.format_chars(chars_li);
+        this.transition_matrix[index] = formatted_chars;
+        if (this.transition_matrix.length == kconfig.key_chars.length) {
+            this.transition_matrix_complete = true;
+            this.parent.continue_init();
+        }
     }
 
     /**
@@ -288,33 +309,18 @@ export class LanguageModel{
         var char_prob_dict = {};
         var normalizer = -Infinity;
         for (var index in chars_li){
-            char_prob_dict[chars_li[index].token] = Math.max(chars_li[index].logProb, Math.log(0.01));
-            normalizer = log_add_exp(normalizer, Math.max(chars_li[index].logProb, Math.log(0.01)));
+            if (chars_li[index].token !== ' ') {
+                char_prob_dict[chars_li[index].token] = Math.max(chars_li[index].logProb, Math.log(0.01));
+                normalizer = log_add_exp(normalizer, Math.max(chars_li[index].logProb, Math.log(0.01)));
+            }
         }
-        var break_prob = Math.log(1/(kconfig.key_chars.length));
-        char_prob_dict["."] = break_prob;
-        normalizer = log_add_exp(normalizer, break_prob);
 
         var key_probs = [];
-        var back_prob = Math.log(kconfig.back_prob);
-        var undo_prob = Math.log(kconfig.undo_prob);
-        var tts_prob = Math.log(kconfig.tts_prob);
-        var rem_prob = Math.log(kconfig.rem_prob-kconfig.break_chars.length/kconfig.key_chars.length - kconfig.back_prob);
 
         for (var char_ind in kconfig.key_chars){
             var char = kconfig.key_chars[char_ind];
             if (char in char_prob_dict){
-                key_probs.push(char_prob_dict[char]-normalizer+rem_prob);
-            }else if (char == kconfig.space_char) {
-                key_probs.push(char_prob_dict[' ']-normalizer+rem_prob);
-            }else if (kconfig.break_chars.includes(char)){
-                key_probs.push(break_prob);
-            }else if (char == kconfig.mybad_char){
-                key_probs.push(undo_prob);
-            }else if (char == kconfig.back_char || char == kconfig.clear_char){
-                key_probs.push(back_prob);
-            }else if (char == kconfig.tts_char){
-                key_probs.push(tts_prob);
+                key_probs.push(char_prob_dict[char]-normalizer);
             }
         }
 
@@ -341,8 +347,8 @@ export class LanguageModel{
         var normalizer = -Infinity;
         var word_index;
         var num_admitted_words = 0;
-        for (char_index in kconfig.main_chars) {
-            char = kconfig.main_chars[char_index];
+        for (char_index in kconfig.key_chars) {
+            char = kconfig.key_chars[char_index];
             char_words = [];
             char_word_probs = [];
             for (word_index in words_li) {
@@ -364,16 +370,6 @@ export class LanguageModel{
                 char_words.push("");
                 char_word_probs.push(-Infinity);
 
-            }
-            word_predictions.push(char_words);
-            word_prediction_probs.push(char_word_probs);
-        }
-        for (char_index = kconfig.main_chars.length; char_index < kconfig.key_chars.length; char_index++){
-            char_words = [];
-            char_word_probs = [];
-            for (var index = 0; index < kconfig.n_pred; index++) {
-                char_words.push("");
-                char_word_probs.push(-Infinity);
             }
             word_predictions.push(char_words);
             word_prediction_probs.push(char_word_probs);

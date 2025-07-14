@@ -225,19 +225,16 @@ export class KeyGrid {
  * @param {KeyGrid} keygrid - The instance of the KeyGrid class.
  * @param {Array<Array<String>>} target_layout - A 2D array specifying the relative locations of the keyboard keys.
  * @param {Array<String>} key_chars - An array of all keys (including characters and corrective options).
- * @param {Array<String>} main_chars - An array of characters that can have word predictions from the Language model.
- * @param {number} n_pred - The max number of word predictions to display per main_character.
  */
 export class ClockGrid{
-    constructor(parent, face_canvas, hand_canvas, keygrid, target_layout, key_chars, main_chars, n_pred){
+    constructor(parent, face_canvas, hand_canvas, keygrid, target_layout, key_chars){
         this.parent = parent;
         this.face_canvas = face_canvas;
         this.hand_canvas = hand_canvas;
         this.keygrid = keygrid;
         this.target_layout = target_layout;
         this.key_chars = key_chars;
-        this.main_chars = main_chars;
-        this.n_pred = n_pred;
+        this.n_pred = 0;
 
         this.clocks = [];
         this.generate_layout();
@@ -254,14 +251,10 @@ export class ClockGrid{
         var y_start;
         var y_end;
 
-        if(this.parent.emoji_keyboard) {
-            this.clock_radius = (this.keygrid.y_positions[0][1] - this.keygrid.y_positions[0][0]) / 5;
-        } else {
-            this.clock_radius = (this.keygrid.y_positions[0][1] - this.keygrid.y_positions[0][0]) / 7;
-        }
+        this.clock_radius = (this.keygrid.y_positions[0][1] - this.keygrid.y_positions[0][0]) / 7;
 
-        for (var i in this.main_chars){
-            var main_char = this.main_chars[i];
+        for (var i in this.key_chars){
+            var main_char = this.key_chars[i];
             var main_char_indices = indexOf_2d(this.target_layout, main_char);
 
             x_start = this.keygrid.x_positions[main_char_indices[0]][main_char_indices[1]][0];
@@ -273,111 +266,6 @@ export class ClockGrid{
             this.generate_main_clock_layout(x_start, y_start, x_end, y_end, main_char);
 
         }
-
-        if (indexOf_2d(this.target_layout, "BREAKUNIT") !== false){
-            var break_chars = [',', '?', '.', '!'];
-            break_chars = this.key_chars.filter(value => -1 !== break_chars.indexOf(value));
-
-            var break_unit_indicies = indexOf_2d(this.target_layout, "BREAKUNIT");
-            x_start = this.keygrid.x_positions[break_unit_indicies[0]][break_unit_indicies[1]][0];
-            x_end = this.keygrid.x_positions[break_unit_indicies[0]][break_unit_indicies[1]][1];
-            y_start = this.keygrid.y_positions[break_unit_indicies[0]][0];
-            y_end = this.keygrid.y_positions[break_unit_indicies[0]][1];
-
-            for (var break_char_index  in break_chars){
-                var break_char = break_chars[break_char_index];
-
-                var break_clock_x = x_start + (x_end - x_start) / 2 * (break_char_index % 2 + 0.25);
-                var break_clock_y;
-                if (break_char_index < 2){
-                    break_clock_y = y_start + (y_end - y_start) / 4;
-                }else{
-                    break_clock_y = y_start + (y_end - y_start) * 3 / 4;
-                }
-
-                let cur_break_clock = new Clock(this.face_canvas, this.hand_canvas,
-                                        break_clock_x, break_clock_y, this.clock_radius, break_char);
-                for (var i=0; i<this.parent.n_pred; i++) {
-                    this.clocks.push(null);
-                }
-                this.clocks.push(cur_break_clock);
-            }
-        }
-
-        if (indexOf_2d(this.target_layout, "BACKUNIT") !== false){
-            var back_chars = ['#', '$'];
-            back_chars = this.key_chars.filter(value => -1 !== back_chars.indexOf(value));
-
-            var back_unit_indicies = indexOf_2d(this.target_layout, "BACKUNIT");
-            x_start = this.keygrid.x_positions[back_unit_indicies[0]][back_unit_indicies[1]][0];
-
-            for (var back_char_index  in back_chars){
-                var back_char = back_chars[back_char_index];
-
-                var back_clock_x = x_start + this.clock_radius * 1.5;
-                var back_clock_y= y_start + (y_end - y_start) / 4 * ((back_char_index % 2)*2 + 1);
-
-                if (back_char == '#'){
-                    back_char = 'Backspace';
-                }else if (back_char == '$'){
-                    back_char = 'Clear';
-                }
-                let cur_back_clock = new Clock(this.face_canvas, this.hand_canvas,
-                                        back_clock_x, back_clock_y, this.clock_radius, back_char);
-                for (var i=0; i<this.parent.n_pred; i++) {
-                    this.clocks.push(null);
-                }
-                this.clocks.push(cur_back_clock);
-
-            }
-        }
-
-        if (indexOf_2d(this.target_layout, "UNDOUNIT") !== false){
-
-            var undo_unit_indicies = indexOf_2d(this.target_layout, "UNDOUNIT");
-            x_start = this.keygrid.x_positions[undo_unit_indicies[0]][undo_unit_indicies[1]][0];
-            x_end = this.keygrid.x_positions[undo_unit_indicies[0]][undo_unit_indicies[1]][1];
-            y_start = this.keygrid.y_positions[undo_unit_indicies[0]][0];
-            y_end = this.keygrid.y_positions[undo_unit_indicies[0]][1];
-
-            var undo_clock_x = x_start + this.clock_radius * 1.5;
-            var undo_clock_y = y_start + (y_end - y_start) / 4;
-
-            let cur_undo_clock = new Clock(this.face_canvas, this.hand_canvas,
-                                    undo_clock_x, undo_clock_y, this.clock_radius, "Undo");
-            for (var i=0; i<this.parent.n_pred; i++) {
-                    this.clocks.push(null);
-                }
-            this.clocks.push(cur_undo_clock);
-
-            var space_clock_x = x_start + this.clock_radius * 1.5;
-            var space_clock_y = y_start + (y_end - y_start) / 4*3;
-
-            let cur_space_clock = new Clock(this.face_canvas, this.hand_canvas,
-                                    space_clock_x, space_clock_y, this.clock_radius, " ");
-            for (var i=0; i<this.parent.n_pred; i++) {
-                    this.clocks.push(null);
-                }
-            this.clocks.push(cur_space_clock);
-
-            var tts_clock_x = x_start + this.clock_radius * 12;
-            var tts_clock_y = y_start + (y_end - y_start) / 4 * 3;
-
-            let cur_tts_clock = new Clock(this.face_canvas, this.hand_canvas,
-                                    tts_clock_x, tts_clock_y, this.clock_radius, "TTS");
-            for (var i=0; i<this.parent.n_pred; i++) {
-                    this.clocks.push(null);
-                }
-            this.clocks.push(cur_tts_clock);
-
-            var undo_label_x = x_start + this.clock_radius * 8;
-            var undo_label_y = y_start + (y_end - y_start) / 4;
-
-            this.undo_label = new Label(this.face_canvas, undo_label_x, undo_label_y, this.clock_radius*2,"");
-
-        }
-        var help;
-
     }
 
     /**
@@ -413,48 +301,6 @@ export class ClockGrid{
              let cur_word_clock = new Clock(this.face_canvas, this.hand_canvas,
                                         word_clock_x, word_clock_y, this.clock_radius, "");
             this.clocks.push(cur_word_clock);
-        }
-    }
-
-    /**
-     * Updates the text strings for all word completion clocks.
-     * @param {Array<String>} words - An array of the current word predictions for each clock.
-     */
-    update_word_clocks(words){
-        var clock;
-        var clock_index;
-
-        if(!this.parent.emoji_keyboard) {
-            for (clock_index in this.clocks) {
-                clock = this.clocks[clock_index];
-
-                var key_index = Math.floor(clock_index / (this.n_pred + 1));
-                var word_index = clock_index % (this.n_pred + 1);
-                if (word_index != 3 && key_index < this.main_chars.length) {
-                    if (words[key_index][word_index] != "") {
-                        var word = words[key_index][word_index];
-                        clock.text = word;
-                        clock.filler = false;
-                    } else {
-                        clock.text = "";
-                        clock.filler = true;
-                        clock.hand_canvas.ctx.clearRect(clock.x_pos - clock.radius, clock.y_pos - clock.radius,
-                            clock.radius * 2, clock.radius * 2);
-                    }
-
-                }
-            }
-        }
-
-        for (clock_index in this.clocks){
-            clock = this.clocks[clock_index];
-            if (clock != null) {
-                clock.draw_face();
-                clock.draw_hand();
-            }
-        }
-        if(!this.parent.emoji_keyboard) {
-            this.undo_label.draw_text();
         }
     }
 }
