@@ -1,0 +1,10 @@
+<!-- Add this to your HTML -->
+<button onclick="speakText()">Speak</button>
+<script>
+function speakText(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  window.speechSynthesis.speak(msg);
+
+}
+</script>
+

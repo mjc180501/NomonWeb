@@ -748,6 +748,20 @@ class Keyboard{
         this.clockgrid.undo_label.text = undo_text;
         this.clockgrid.undo_label.draw_text();
     }
+    // Speak Text Function 
+    // input: string text
+    speakText(text) {
+        // get the last sentence 
+        const sentences = text.split(".").filter(s => s.trim());
+        const lastSentence = sentences[sentences.length - 1].trim();
+        const msg = new SpeechSynthesisUtterance(lastSentence);
+        // ensure voice is updated
+        if (this.voices && this.voices.length > 0 && typeof this.currentVoiceIndex === "number") {
+            msg.voice = this.voices[this.currentVoiceIndex];
+        }
+        window.speechSynthesis.speak(msg);
+    }
+
     make_choice(index){
         var is_undo = false;
         var is_equalize = false;
@@ -857,15 +871,29 @@ class Keyboard{
             }
             else if (kconfig.main_chars.includes(new_char)) {
                 this.old_context_li.push(this.context);
-                this.context.concat(new_char);
-                this.last_add_li.push(1);
-                this.typed = this.typed.concat(new_char);
-            }
+
+                // dont concat if voice changed
+                if (new_char !== "'") {
+                    this.context.concat(new_char);
+                    this.last_add_li.push(1);
+                    this.typed = this.typed.concat(new_char);
+                }
+
+        
+                }
             else if (kconfig.break_chars.includes(new_char)) {
                 this.old_context_li.push(this.context);
                 this.context = "";
                 this.last_add_li.push(1);
                 this.typed = this.typed.concat(new_char);
+                // when the user types a period use text to speech on the full typed
+
+                if (new_char == "."){
+                    // speak text
+                    this.speakText(this.typed);
+                    console.log("SPEAKING TEXT: ", this.typed);
+                }
+
                 // if " " + new_char in self.typed:
                 //     self.last_add_li.concat(2);
                 //     self.typed = self.typed.replace(" " + new_char, new_char + " ");
@@ -907,6 +935,23 @@ class Keyboard{
         this.update_context();
 
         this.draw_typed();
+
+        // change voice
+        if (new_char === "'") {
+            setTimeout(() => {
+            if (!this.voices || this.voices.length === 0) {
+                this.voices = window.speechSynthesis.getVoices();
+                this.currentVoiceIndex = 0;
+            }
+            this.currentVoiceIndex = (this.currentVoiceIndex + 1) % this.voices.length;
+
+            const msg = new SpeechSynthesisUtterance("Voice changed");
+            msg.voice = this.voices[this.currentVoiceIndex];
+            window.speechSynthesis.speak(msg);
+        }, 0);
+        }
+
+
 
         if (this.pause_checkbox.checked) {
             this.start_pause();
