@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tutorial - Where's Waldo Clock Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+        .tutorial-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border: 2px solid #ccc;
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .step {
+            display: none;
+            margin: 20px 0;
+        }
+        .step.active {
+            display: block;
+        }
+        .step-title {
+            font-size: 24px;
+            color: #0056ff;
+            margin-bottom: 15px;
+        }
+        .description {
+            font-size: 18px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+        .demo-box {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 20px;
+            margin: 20px 0;
+            min-height: 200px;
+            position: relative;
+        }
+        canvas {
+            display: block;
+            margin: 0 auto;
+            border: 1px solid #ccc;
+        }
+        .buttons {
+            text-align: center;
+            margin-top: 30px;
+        }
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            margin: 0 10px;
+            cursor: pointer;
+            border: 2px solid #0056ff;
+            background: white;
+            color: #0056ff;
+        }
+        button:hover {
+            background: #0056ff;
+            color: white;
+        }
+        .highlight {
+            background: #ffffcc;
+            padding: 15px;
+            border-left: 4px solid #ffcc00;
+            margin: 15px 0;
+        }
+        .progress {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        .instruction-box {
+            background: #e3f2fd;
+            padding: 15px;
+            margin: 15px 0;
+            border: 1px solid #90caf9;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+    </style>
+</head>
+<body>
+    <div class="tutorial-container">
+        <h1>How to Play: Where's Waldo Clock Game</h1>
+        <div class="progress" id="progress">Step 1 of 4</div>
+        
+        <div class="step active" data-step="1">
+            <div class="step-title">Step 1: Meet the Character</div>
+            <div class="description">
+                This is the character you'll be looking for in the game. He'll be somewhere on the screen with a yellow glow around him.
+            </div>
+            <div class="demo-box">
+                <canvas id="character-demo" width="400" height="300"></canvas>
+            </div>
+            <div class="highlight">
+                In the actual game, you need to find this character and identify which clock is closest to him.
+            </div>
+        </div>
+        
+        <div class="step" data-step="2">
+            <div class="step-title">Step 2: Understanding the Clocks</div>
+            <div class="description">
+                The clocks have hands that rotate. Watch this clock - the hand spins around continuously.
+            </div>
+            <div class="demo-box">
+                <canvas id="clock-demo" width="400" height="300"></canvas>
+            </div>
+            <div class="instruction-box">
+                Press SPACE when the hand points straight UP (12 o'clock)
+            </div>
+            <div class="highlight">
+                Timing is important! The game learns your reaction time during calibration.
+            </div>
+        </div>
+        
+        <div class="step" data-step="3">
+            <div class="step-title">Step 3: How to Select a Clock</div>
+            <div class="description">
+                To select a clock, you press SPACE when its hand points UP. Try it with this clock!
+            </div>
+            <div class="demo-box">
+                <canvas id="click-demo" width="600" height="400"></canvas>
+                <div id="click-feedback" style="text-align: center; margin-top: 15px; font-size: 18px; font-weight: bold;"></div>
+            </div>
+            <div class="instruction-box">
+                Press SPACE when the GREEN clock's hand points UP!
+            </div>
+            <div class="highlight">
+                In the game, multiple clocks will be spinning. You need to select the one closest to the character.
+            </div>
+        </div>
+        
+        <div class="step" data-step="4">
+            <div class="step-title">Step 4: Game Flow</div>
+            <div class="description">
+                Here's what happens in the game:
+                <ol style="font-size: 18px; line-height: 2;">
+                    <li><strong>Calibration (3 rounds):</strong> A TARGET clock is highlighted. Practice timing with that clock.</li>
+                    <li><strong>Game (5 rounds):</strong> Find the character and select the closest clock.</li>
+                    <li><strong>Scoring:</strong> Get +10 points for correct selections. Build streaks!</li>
+                    <li><strong>Feedback:</strong> At the end, tell us if the system made mistakes.</li>
+                </ol>
+            </div>
+            <div class="highlight">
+                <strong>Remember:</strong>
+                <ul>
+                    <li>Press SPACE when the clock hand points UP</li>
+                    <li>Look for the yellow glow around the character</li>
+                    <li>Choose the clock that's closest to the character</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="buttons">
+            <button id="prev-btn" onclick="prevStep()" style="display: none;">Previous</button>
+            <button id="next-btn" onclick="nextStep()">Next</button>
+            <button id="start-btn" onclick="startGame()" style="display: none;">Start Game</button>
+        </div>
+    </div>
+    
+    <script>
+        let currentStep = 1;
+        const totalSteps = 4;
+        let clockAngle = 0;
+        let animationRunning = false;
+        let clickDemoClocks = [];
+        let targetClockIndex = 0;
+        
+        function updateStep() {
+            document.querySelectorAll('.step').forEach(step => {
+                step.classList.remove('active');
+            });
+            document.querySelector(`[data-step="${currentStep}"]`).classList.add('active');
+            document.getElementById('progress').textContent = `Step ${currentStep} of ${totalSteps}`;
+            
+            document.getElementById('prev-btn').style.display = currentStep > 1 ? 'inline-block' : 'none';
+            document.getElementById('next-btn').style.display = currentStep < totalSteps ? 'inline-block' : 'none';
+            document.getElementById('start-btn').style.display = currentStep === totalSteps ? 'inline-block' : 'none';
+            
+            if (currentStep === 1) drawCharacterDemo();
+            if (currentStep === 2) startClockDemo();
+            if (currentStep === 3) startClickDemo();
+        }
+        
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateStep();
+            }
+        }
+        
+        function prevStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                updateStep();
+            }
+        }
+        
+        function startGame() {
+            window.location.href = 'waldo_index.html';
+        }
+        
+        function drawCharacterDemo() {
+            const canvas = document.getElementById('character-demo');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            const x = 200;
+            const y = 150;
+            const size = 40;
+            
+            ctx.fillStyle = '#ffdbac';
+            ctx.beginPath();
+            ctx.arc(x, y, size/2, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(x - size/3, y + size/3, size*2/3, size/2);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x - size/3, y + size/2, size*2/3, size/8);
+            
+            ctx.fillStyle = '#ff0000';
+            ctx.fillRect(x - size/2.5, y - size/2, size/1.3, size/4);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(x - size/2.5, y - size/2.5, size/1.3, size/8);
+            
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(x - size/6, y, size/8, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x + size/6, y, size/8, 0, 2 * Math.PI);
+            ctx.stroke();
+            
+            ctx.shadowColor = 'yellow';
+            ctx.shadowBlur = 20;
+            ctx.strokeStyle = 'yellow';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+        
+        function startClockDemo() {
+            const canvas = document.getElementById('clock-demo');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            let angle = 0;
+            
+            function animate() {
+                if (currentStep !== 2) return;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                const x = 200;
+                const y = 150;
+                const r = 40;
+                
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, 2 * Math.PI);
+                ctx.strokeStyle = '#0056ff';
+                ctx.lineWidth = 4;
+                ctx.stroke();
+                ctx.fillStyle = 'white';
+                ctx.fill();
+                
+                ctx.fillStyle = '#00ff00';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('12', x, y - r + 20);
+                
+                ctx.save();
+                ctx.translate(x, y);
+                ctx.rotate(angle - Math.PI/2);
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(r * 0.7, 0);
+                ctx.strokeStyle = '#0056ff';
+                ctx.lineWidth = 4;
+                ctx.lineCap = 'round';
+                ctx.stroke();
+                ctx.restore();
+                
+                angle += 0.05;
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+        }
+        
+        function startClickDemo() {
+            const canvas = document.getElementById('click-demo');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            
+            clickDemoClocks = [
+                {x: 150, y: 200, angle: 0, isTarget: false},
+                {x: 300, y: 200, angle: 1, isTarget: true},
+                {x: 450, y: 200, angle: 2, isTarget: false}
+            ];
+            targetClockIndex = 1;
+            
+            function animate() {
+                if (currentStep !== 3) return;
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                
+                clickDemoClocks.forEach((clock, i) => {
+                    const r = 35;
+                    ctx.beginPath();
+                    ctx.arc(clock.x, clock.y, r, 0, 2 * Math.PI);
+                    ctx.strokeStyle = clock.isTarget ? '#00ff00' : '#0056ff';
+                    ctx.lineWidth = clock.isTarget ? 6 : 4;
+                    ctx.stroke();
+                    ctx.fillStyle = 'white';
+                    ctx.fill();
+                    
+                    ctx.save();
+                    ctx.translate(clock.x, clock.y);
+                    ctx.rotate(clock.angle - Math.PI/2);
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.lineTo(r * 0.7, 0);
+                    ctx.strokeStyle = clock.isTarget ? '#00ff00' : '#0056ff';
+                    ctx.lineWidth = 4;
+                    ctx.lineCap = 'round';
+                    ctx.stroke();
+                    ctx.restore();
+                    
+                    clock.angle += 0.05;
+                });
+                
+                requestAnimationFrame(animate);
+            }
+            
+            animate();
+            document.getElementById('click-feedback').textContent = '';
+        }
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === ' ' && currentStep === 3) {
+                e.preventDefault();
+                const targetClock = clickDemoClocks[targetClockIndex];
+                const normalizedAngle = ((targetClock.angle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+                const isGoodTiming = normalizedAngle < 0.4 || normalizedAngle > 2 * Math.PI - 0.4;
+                
+                const feedback = document.getElementById('click-feedback');
+                if (isGoodTiming) {
+                    feedback.textContent = 'Great timing! You selected the green clock correctly!';
+                    feedback.style.color = '#00aa00';
+                } else {
+                    feedback.textContent = 'Try to press SPACE when the hand points UP';
+                    feedback.style.color = '#ff6600';
+                }
+            }
+        });
+        
+        updateStep();
+    </script>
+</body>
+</html>
