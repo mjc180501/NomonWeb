@@ -28,6 +28,7 @@ export class TicTacToeGame {
         setInterval(() => this.animate(), config.ideal_wait_s * 1000);
     }
 
+    // Calista - look here :)
     createClocks() {
         this.clocks = [];
         const padding = 100;
